@@ -141,14 +141,25 @@ def findAllUsuarios():
 
 def findUsuario(id,email):
     #Query Usuario
-    global mydb
-    mycol = mydb.usuario
-    print("\n####QUERY USUARIO####")
+   
     if id:
-        myquery = { "_id": id }
+        query = session.prepare(
+        "SELECT * FROM usuario WHERE id = ?")
+        usuario = session.execute(query, id)
+  
     else: 
-        myquery = { "email": email }
-    return mycol.find_one(myquery)
+        query = session.prepare(
+        "SELECT * FROM usuario WHERE email = ?")
+        usuario = session.execute(query, email)
+
+
+    for info in usuario:
+        print(
+            f"""\nInformações \nNome: {info.nome}\nEmail: {info.email}\nCPF: {info.cpf}""")
+        end = info.endereco
+        end = json.loads(end)
+        print( f"""\nInformações do Endereço \nCEP: {end["cep"]}\nRua: {end["rua"]}\nCidade: {end["cidade"]} \nEstado: {end["estado"]}""")
+    return print("QUERY USUARIO")
 
 def findAllProdutos():
     produtos = session.execute("SELECT * FROM produto")
