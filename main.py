@@ -18,7 +18,6 @@ session = cluster.connect()
 
 
 session.execute("USE mercadolivre;")
-session.execute("DROP TABLE mercadolivre.compra")
 print("Criando tabelas")
 
 tabelas = session.execute("SELECT * FROM system_schema.tables where keyspace_name = 'mercadolivre'")
@@ -65,9 +64,10 @@ def deleteVendedor(vendedor):
     mycol.delete_one(vendedor)
 
 def insertUsuario(nome,cpf,email,senha,endereco):
-    print(endereco)
+
+
     endereco = json.dumps(endereco)
-    print(endereco)
+
     query = session.prepare("INSERT INTO usuario(email, nome, cpf, senha, endereco) values (?, ?, ?, ?, ?)")
     session.execute(query,[email,nome,cpf,senha,endereco])
     print("\n####INSERT USUARIO####")
@@ -94,9 +94,8 @@ def insertProduto(vendedor,nome,preco,descricao):
 
 def updateProduto(id,nome,preco,descricao):
     #Update Produto
-    global mydb
-    mycol = mydb.produto
-    mycol.update_one({"_id": id},{"$set":{ "nome": nome, "preco":preco,"descricao":descricao}})
+    query = session.prepare("UPDATE produto SET nome = '{valor1}', preco = '{valor2}', descricao = '{valor3}' WHERE id = '{valor4}' ".format(valor1=nome, valor2=preco, valor3=descricao, valor4=id))
+    session.execute(query)
     print("\n####UPDATE PRODUTO####")
 
 def deleteProduto(produto):
@@ -108,8 +107,13 @@ def deleteProduto(produto):
 def findAllVendedores():
     vendedores = session.execute("SELECT * FROM vendedor")
     lista = []
+    index = 0
     for vendedor in vendedores:
-        lista.append(json.loads(vendedor))
+        print("Index do usuário {index}\nNome: {nome}\nEmail: {email}\nCnpj: {cnpj}\n".format(
+            index=index, nome=vendedor.nome, email=vendedor.email, cnpj=vendedor.cnpj
+        ))
+        lista.append(vendedor.email)
+        index += 1
     return lista
 
 def findVendedor(id,email):
@@ -126,8 +130,13 @@ def findVendedor(id,email):
 def findAllUsuarios():
     usuarios = session.execute("SELECT * FROM usuario")
     lista = []
+    index = 0
     for usuario in usuarios:
-        lista.append(json.loads(usuario))
+        print("Index do usuario {index}\nNome: {nome}\nEmail: {email}\nCpf: {cpf}\n".format(
+            index=index, nome=usuario.nome, email=usuario.email, cpf=usuario.cpf
+        ))
+        lista.append(usuario.email)
+        index += 1
     return lista
 
 def findUsuario(id,email):
@@ -144,8 +153,14 @@ def findUsuario(id,email):
 def findAllProdutos():
     produtos = session.execute("SELECT * FROM produto")
     lista = []
+    index = 0
     for produto in produtos:
-        lista.append(json.loads(produto))
+        print("Index do produto {index}\nNome: {nome}\nPreco: {preco}\n".format(
+            index=index, nome=produto.nome, preco=produto.preco
+        ))
+
+        lista.append({'id': produto.id, 'nome': produto.nome, 'vendedor': produto.vendedor})
+        index += 1
     return lista
 
 def findProduto(nome,vendedor):
@@ -173,9 +188,11 @@ def findCompra(emailUsuario,emailVendedor):
     return lista
 
 def insertCompra(usuario,vendedor,produto):
+    
     id = str(random.randint(1, 100000))
+    produto = json.dumps(produto)
     query = session.prepare("INSERT INTO compra(id, usuario, vendedor, produtos) values (?, ?, ?, ?)")
-    session.execute(query,[id,usuario.get("email"),vendedor.get("email"),produto])
+    session.execute(query,[id,usuario,vendedor,produto])
     print("\n####INSERT COMPRA####")
 
 
@@ -226,11 +243,8 @@ def menu():
                 index = 0
                 vendedores = findAllVendedores()      
 
-                for vendedor in vendedores:
-                    print(str(index) + ' - ' + vendedor.get("nome"))
-                    index = index + 1
                 index =  int(input("Digite o index do vendedor desejado: "))
-                vendedor = vendedores[index].get("email")
+                vendedor = vendedores[index]
 
                 nomeProduto = input("Digite o nome do seu produto: ")
                 precoProduto = input("Digite o preço do seu produto: ")
@@ -240,12 +254,8 @@ def menu():
                 index = 0
                 usuarios = findAllUsuarios()      
 
-                for usuario in usuarios:
-                    print(str(index) + ' - ' + usuario.get("nome"))
-                    index = index + 1
                 index = int(input("Digite o index do usuário desejado: "))
-                usuario = usuarios[index].get("email")
-                usuarioCompra = findUsuario(None,usuario)
+                usuario = usuarios[index]
                 produtos = findAllProdutos()
 
                 listaCompra = []
@@ -255,9 +265,6 @@ def menu():
                     index = 0
                     print("X - Cancelar")
                     print("P - Prosseguir ")
-                    for produto in produtos:
-                        print(str(index) + ' - ' + produto.get("nome"))
-                        index = index + 1
                     
                     index = input("Digite o index do produto desejado: ")
                     if index == 'X':
@@ -267,19 +274,9 @@ def menu():
                         if len(listaCompra) == 0 :
                             print("Adicione ao menos um item na sua compra !")
                         else:
-                            usuarioDict = {"_id": usuarioCompra.get("_id"), "nome": usuarioCompra.get("nome"),  "email": usuarioCompra.get("email")}
-                            compras = []
-                            vendedoresCompra = []
-
-                        for compra in listaCompra:
-                            produtoDict = {"_id": compra.get("_id"), "nome": compra.get("nome"),  "preco": compra.get("preco")}
-                            compras.append(produtoDict)
-                            vendedorCompra = findVendedor(compra.get("vendedor_id"),None)
-                            vendedorDict = {"_id": vendedorCompra.get("_id"), "nome": vendedorCompra.get("nome"), "email": vendedorCompra.get("email")}
-                            vendedoresCompra.append(vendedorDict)
-                        
-                        insertCompra(usuarioDict,vendedoresCompra,compras) 
-
+                            for compra in listaCompra:
+                                insertCompra(usuario,compra["vendedor"],compra) 
+                            
                         comprando = False
                         break
 
