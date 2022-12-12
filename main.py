@@ -64,19 +64,16 @@ def deleteVendedor(vendedor):
     mycol.delete_one(vendedor)
 
 def insertUsuario(nome,cpf,email,senha,endereco):
-
-
     endereco = json.dumps(endereco)
-
     query = session.prepare("INSERT INTO usuario(email, nome, cpf, senha, endereco) values (?, ?, ?, ?, ?)")
     session.execute(query,[email,nome,cpf,senha,endereco])
     print("\n####INSERT USUARIO####")
 
-def updateUsuario(id,nome,cpf,email,senha,endereco):
-    #Update Usuario
-    global mydb
-    mycol = mydb.usuario
-    mycol.update_one({"_id": id},{"$set":{"nome": nome, "cpf":cpf,"email":email,"senha":senha,"endereco":endereco,"favoritos": [] }})
+def updateUsuario(emailUsu,nome,cpf,senha,endereco):
+    endereco = json.dumps(endereco)
+    query = session.prepare("UPDATE usuario SET nome = '{valor1}', cpf = '{valor2}' , senha = '{valor4}', endereco = '{valor5}' WHERE email = '{valor6}' ".format(valor1=nome, valor2=cpf, valor4=senha, valor5=endereco, valor6 = emailUsu))
+    session.execute(query)
+   
     print("\n####UPDATE USUARIO####")
 
 def deleteUsuario(usuario):
@@ -321,15 +318,11 @@ def menu():
                 index = 0
                 usuarios = findAllUsuarios()      
 
-                for usuario in usuarios:
-                    print(str(index) + ' - ' + usuario.get("nome"))
-                    index = index + 1
                 index = int(input("Digite o index do usuário desejado: "))
                 
 
                 nome = input("Insira o NOME do usuário : ")
                 cpf = input("Insira o CPF do usuário: ")
-                email = input("Insira o EMAIL do usuário: ")
                 senha = input("Insira a SENHA do usuário: ")
                 print("-----ENDEREÇO-----")
                 cep = input("Insira o CEP do usuário: ")
@@ -337,7 +330,8 @@ def menu():
                 cidade = input("Insira a CIDADE do usuário: ")
                 rua = input("Insira a RUA do usuário: ")
                 numero = input("Insira o NÚMERO do usuário: ")
-                updateUsuario(usuarios[index].get("_id"),nome,cpf,email,senha,{"cep":cep, "estado": estado, "cidade": cidade, "rua": rua, "numero": numero})
+
+                updateUsuario(usuarios[index],nome,cpf,senha,{"cep":cep, "estado": estado, "cidade": cidade, "rua": rua, "numero": numero})
 
             case '10':
                 index = 0
