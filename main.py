@@ -118,14 +118,20 @@ def findAllVendedores():
 
 def findVendedor(id,email):
     #Query Vendedor
-    global mydb
-    mycol = mydb.vendedor
-    print("\n####QUERY VENDEDOR####")
+     
     if id:
-        myquery = { "_id": id }
+        query = session.prepare(
+        "SELECT * FROM vendedor WHERE id = ?")
+        vendedor = session.execute(query, [id])
+  
     else: 
-        myquery = { "email": email }
-    return mycol.find_one(myquery)
+        query = session.prepare(
+        "SELECT * FROM vendedor WHERE email = ?")
+        vendedor = session.execute(query, [email])
+    for info in vendedor:
+        print(
+            f"""\nInformações \nNome: {info.nome}\nEmail: {info.email}\nCNPJ: {info.cnpj}""")
+    return print("QUERY VENDEDOR")
 
 def findAllUsuarios():
     usuarios = session.execute("SELECT * FROM usuario")
@@ -145,12 +151,12 @@ def findUsuario(id,email):
     if id:
         query = session.prepare(
         "SELECT * FROM usuario WHERE id = ?")
-        usuario = session.execute(query, id)
+        usuario = session.execute(query, [id])
   
     else: 
         query = session.prepare(
         "SELECT * FROM usuario WHERE email = ?")
-        usuario = session.execute(query, email)
+        usuario = session.execute(query, [email])
 
 
     for info in usuario:
@@ -174,29 +180,33 @@ def findAllProdutos():
         index += 1
     return lista
 
-def findProduto(nome,vendedor):
-    #Query Produto
-    global mydb
-    mycol = mydb.produto
-    vendedorId = findVendedor(None,vendedor).get("_id")
-    print("\n####QUERY PRODUTO####")
-    myquery = { "vendedor_id": vendedorId, "nome": nome }
-    return mycol.find_one(myquery)
+def findProduto(vendedor):
+    query = session.prepare(
+        "SELECT * FROM produto WHERE vendedor = ? limit 1000 ALLOW FILTERING")
+    produto = session.execute(query, [vendedor])
+
+
+    for info in produto:
+        print(
+            f"""\nInformações \nNome: {info.nome}\nPreço: {info.preco}\nEmail do Vendedor: {info.vendedor}""")
+      
+    return print("QUERY PRODUTO")
 
 def findCompra(emailUsuario,emailVendedor):
-    #Query Compra
-    global mydb
-    mycol = mydb.compra
-    print("\n####QUERY COMPRA####")
+
     if emailUsuario:
-        myquery = { "usuario.email":  emailUsuario }
-    else: 
-        myquery = { "vendedor": {"$elemMatch": {"email": emailVendedor}} }
-    compras = mycol.find(myquery)
-    lista = []
-    for compra in compras:
-        lista.append(compra)
-    return lista
+        query = session.prepare(
+            "SELECT * FROM compra WHERE usuario = ? limit 1000 ALLOW FILTERING")
+        produto = session.execute(query, [emailUsuario])
+    else:
+        query = session.prepare(
+            "SELECT * FROM compra WHERE vendedor = ? limit 1000 ALLOW FILTERING")
+        produto = session.execute(query, [emailVendedor])
+    for info in produto:
+        print(
+            f"""\nInformações da Compra \nVendedor: {info.vendedor}\n Comprador: {info.usuario}\nProduto: {info.produtos}""")
+      
+    return print("QUERY COMPRA")
 
 def insertCompra(usuario,vendedor,produto):
     
@@ -300,7 +310,7 @@ def menu():
             case '6':
                 print(findVendedor(None, input("Digite o email do vendedor: ")))   
             case '7':
-                print(findProduto(input("Digite o nome do Produto: "), input("Digite o email do vendedor: ")))
+                print(findProduto(input("Digite o email do vendedor: ")))
             case '8':
                 decisao = input("Encontrar as compras por:\n 0 - Usuário \n 1 - Vendedor \n")
                 if decisao == '0':
