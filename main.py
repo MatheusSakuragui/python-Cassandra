@@ -16,12 +16,10 @@ cluster = Cluster(cloud=cloud_config, auth_provider=auth_provider)
 
 session = cluster.connect()
 
-
 session.execute("USE mercadolivre;")
 print("Criando tabelas")
 
 tabelas = session.execute("SELECT * FROM system_schema.tables where keyspace_name = 'mercadolivre'")
-
 
 session.execute(
     "CREATE TABLE IF NOT EXISTS usuario (email text PRIMARY KEY, nome text, senha text, cpf text, endereco text, favoritos text);")
@@ -57,10 +55,10 @@ def updateVendedor(email,nome,cnpj):
     print("\n####UPDATE VENDEDOR####")
 
 def deleteVendedor(vendedor):
-    #Delete Vendedor
-    global mydb
-    mycol = mydb.vendedor
-    mycol.delete_one(vendedor)
+    query = session.prepare("DELETE FROM vendedor WHERE email = ?")
+    session.execute(query,[vendedor])
+
+    print("\n####DELETE Vendedor####")
 
 def insertUsuario(nome,cpf,email,senha,endereco):
     endereco = json.dumps(endereco)
@@ -76,10 +74,10 @@ def updateUsuario(emailUsu,nome,cpf,senha,endereco):
     print("\n####UPDATE USUARIO####")
 
 def deleteUsuario(usuario):
-    #Delete Usuario
-    global mydb
-    mycol = mydb.usuario
-    mycol.delete_one(usuario)
+    query = session.prepare("DELETE FROM usuario WHERE email = ?")
+    session.execute(query,[usuario])
+
+    print("\n####DELETE USUARIO####")
 
 def insertProduto(vendedor,nome,preco,descricao):
     id = str(random.randint(1, 100000))
@@ -95,10 +93,10 @@ def updateProduto(id,nome,preco,descricao):
     print("\n####UPDATE PRODUTO####")
 
 def deleteProduto(produto):
-    #Delete Produto
-    global mydb
-    mycol = mydb.produto
-    mycol.delete_one(produto)
+    query = session.prepare("DELETE FROM produto WHERE id = ?")
+    session.execute(query,[produto])
+
+    print("\n####DELETE PRODUTO####")
 
 def findAllVendedores():
     vendedores = session.execute("SELECT * FROM vendedor")
@@ -216,8 +214,6 @@ def insertCompra(usuario,vendedor,produto):
 ############# main
 
 def menu():
-  
-    
     loop = True
     while loop:
         print("""
@@ -244,7 +240,7 @@ def menu():
                 cpf = input("Insira o CPF do usuário: ")
                 email = input("Insira o EMAIL do usuário: ")
                 senha = input("Insira a SENHA do usuário: ")
-                print("-----ENDEREÇO-----")
+                print("----- ENDEREÇO -----")
                 cep = input("Insira o CEP do usuário: ")
                 estado = input("Insira o ESTADO do usuário: ")
                 cidade = input("Insira a CIDADE do usuário: ")
@@ -344,49 +340,40 @@ def menu():
             case '11':
                 index = 0
                 produtos = findAllProdutos()
-               
+
                 index = int(input("Digite o index do produto desejado: "))
                 nomeProduto = input("Digite o nome do seu produto: ")
                 precoProduto = input("Digite o preço do seu produto: ")
                 descricaoProduto = input("Digite a descrição do seu produto: ")
 
-                updateProduto(produtos[index],nomeProduto,precoProduto,descricaoProduto)
+                updateProduto(produtos[index].get("id"),nomeProduto,precoProduto,descricaoProduto)
+
             case '12':
                 index = 0
                 usuarios = findAllUsuarios()      
 
-                for usuario in usuarios:
-                    print(str(index) + ' - ' + usuario.get("nome"))
-                    index = index + 1
                 index = int(input("Digite o index do usuário desejado: "))
-
                 deleteUsuario(usuarios[index])
+
             case '13':
                 index = 0
-                vendedores = findAllVendedores()      
-
-                for vendedor in vendedores:
-                    print(str(index) + ' - ' + vendedor.get("nome"))
-                    index = index + 1
+                vendedores = findAllVendedores()   
 
                 index = int(input("Digite o index do vendedor desejado: "))
-
                 deleteVendedor(vendedores[index])
+
             case '14':
                 index = 0
                 produtos = findAllProdutos()
 
-                for produto in produtos:
-                    print(str(index) + ' - ' + produto.get("nome"))
-                    index = index + 1
                 index = int(input("Digite o index do produto desejado: "))
+                deleteProduto(produtos[index].get("id"))     
 
-                deleteProduto(produtos[index])               
             case '0':
                 print("Até a Próxima!")
                 loop = False
                 break
-            case _ :
+            case _:
                 print("Operação não entendida")
 
 
