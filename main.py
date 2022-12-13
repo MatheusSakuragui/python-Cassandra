@@ -50,11 +50,10 @@ def insertVendedor(nome,email,cnpj):
     session.execute(query,[email,nome,cnpj])
     print("\n####INSERT VENDEDOR####")
 
-def updateVendedor(id,nome,email,cnpj):
+def updateVendedor(email,nome,cnpj):
     #Update Vendedor
-    global mydb
-    mycol = mydb.vendedor
-    mycol.update_one({"_id": id},{"$set":{ "nome": nome,"email":email,"cnpj":cnpj}})
+    query = session.prepare("UPDATE vendedor SET nome = '{valor1}', cnpj = '{valor2}'  WHERE email = '{valor3}' ".format(valor1=nome, valor2=cnpj, valor3=email))
+    session.execute(query)
     print("\n####UPDATE VENDEDOR####")
 
 def deleteVendedor(vendedor):
@@ -337,28 +336,21 @@ def menu():
                 index = 0
                 vendedores = findAllVendedores()      
 
-                for vendedor in vendedores:
-                    print(str(index) + ' - ' + vendedor.get("nome"))
-                    index = index + 1
-
                 index = int(input("Digite o index do vendedor desejado: "))
                 nome = input("Insira o NOME do vendedor: ")
-                email = input("Insira o EMAIL do vendedor: ")
                 cnpj = input("Insira o CNPJ do vendedor: ")
 
-                updateVendedor(vendedores[index].get("_id"),nome,email,cnpj)
+                updateVendedor(vendedores[index],nome,cnpj)
             case '11':
                 index = 0
                 produtos = findAllProdutos()
-                for produto in produtos:
-                    print(str(index) + ' - ' + produto.get("nome"))
-                    index = index + 1
+               
                 index = int(input("Digite o index do produto desejado: "))
                 nomeProduto = input("Digite o nome do seu produto: ")
                 precoProduto = input("Digite o preço do seu produto: ")
                 descricaoProduto = input("Digite a descrição do seu produto: ")
 
-                updateProduto(produtos[index].get("_id"),nomeProduto,precoProduto,descricaoProduto)
+                updateProduto(produtos[index],nomeProduto,precoProduto,descricaoProduto)
             case '12':
                 index = 0
                 usuarios = findAllUsuarios()      
